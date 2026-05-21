@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Converter Pro | The Elite Utility Lab</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+
+    <style>
+        /* APPLE-ELITE DESIGN TOKENS 
+           The focus here is depth, motion, and "Freshy" aesthetics.
+        */
+        @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@200;400;700;800&display=swap');
+
+        :root {
+            --apple-black: #000000;
+            --apple-grey: #1d1d1f;
+            --accent-blue: #0071e3;
+            --glass: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --dynamic-ease: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            background-color: var(--apple-black);
+            font-family: 'SF Pro Display', 'Plus Jakarta Sans', sans-serif;
+            color: #fff;
+            margin: 0;
+            overflow: hidden; /* Controlled by engine */
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* COMPELLING ANIMATED BACKGROUND 
+           A multi-layered parallax mesh that reacts to logic states.
+        */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            filter: blur(80px);
+            opacity: 0.6;
+            transition: opacity 2s ease;
+        }
+
+        .floating-orb {
+            position: absolute;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            filter: blur(60px);
+            z-index: -2;
+            animation: move 25s infinite alternate ease-in-out;
+        }
+
+        @keyframes move {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(20vw, 30vh) scale(1.2); }
+            100% { transform: translate(-10vw, 10vh) scale(0.8); }
+        }
+
+        /* GLASSMORPHISM CORE 
+           Inspired by Apple's "VisionOS" depth.
+        */
+        .vision-card {
+            background: var(--glass);
+            backdrop-filter: blur(30px) saturate(180%);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: 48px;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.6);
+            transition: all 0.6s var(--dynamic-ease);
+        }
+
+        .vision-card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-5px);
+        }
+
+        /* ELITE INTERACTIVE BUTTONS 
+        */
+        .apple-btn {
+            background: #fff;
+            color: #000;
+            font-weight: 700;
+            padding: 1.2rem 2.5rem;
+            border-radius: 100px;
+            letter-spacing: -0.02em;
+            transition: all 0.3s var(--dynamic-ease);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .apple-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(255, 255, 255, 0.2);
+        }
+
+        .apple-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* CUSTOM SELECT STYLING 
+        */
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1.5rem center;
+            background-size: 1.2rem;
+        }
+
+        /* STATUS ELEMENTS 
+        */
+        .badge {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(255,255,255,0.6);
+        }
+
+        .fireworks-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* UI STATES 
+        */
+        .state-hidden { display: none !important; }
+        
+        .fade-in {
+            animation: fadeIn 0.8s var(--dynamic-ease) forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* SENSORY SCROLLBAR 
+        */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+        /* FLOATING ICON PARALLAX 
+        */
+        .floating-icon {
+            position: absolute;
+            z-index: -1;
+            opacity: 0.3;
+            filter: grayscale(1) brightness(2);
+            pointer-events: none;
+            animation: float 15s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(10deg); }
+            100% { transform: translateY(0) rotate(0deg); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-6 overflow-auto">
+
+    <canvas id="bg-canvas"></canvas>
+    <div class="floating-orb" style="width: 400px; height: 400px; top: -100px; left: -100px; background: #1e3a8a;"></div>
+    <div class="floating-orb" style="width: 500px; height: 500px; bottom: -200px; right: -100px; background: #581c87;"></div>
+
+    <div class="floating-icon" style="top: 15%; left: 10%; font-size: 120px;">📄</div>
+    <div class="floating-icon" style="top: 70%; right: 15%; font-size: 80px;">🖼️</div>
+    <div class="floating-icon" style="top: 40%; left: 80%; font-size: 50px;">☁️</div>
+
+    <div id="app-shell" class="w-full max-w-6xl z-10">
+        
+        <header class="text-center mb-12">
+            <div class="inline-flex items-center gap-3 mb-6">
+                <span class="badge">Enterprise Engine</span>
+                <span class="badge text-blue-400">v2.4.0</span>
+            </div>
+            <h1 class="text-7xl font-extrabold tracking-tighter mb-4">
+                Converter<span class="text-white/30">Pro</span>
+            </h1>
+            <p class="text-white/50 text-xl font-medium max-w-2xl mx-auto">
+                Industrial-grade file transformation. Designed by Architects. Powered by local-machine performance.
+            </p>
+        </header>
+
+        <main id="main-interactor" class="vision-card p-12 relative min-h-[500px] flex flex-col justify-center">
+            
+            <div id="state-drop" class="text-center fade-in">
+                <div id="drop-area" class="border-2 border-dashed border-white/10 rounded-[40px] p-24 transition-all hover:border-white/30 hover:bg-white/5 cursor-pointer group">
+                    <div class="mb-8 transform group-hover:scale-110 transition-transform duration-500">
+                        <div class="w-32 h-32 bg-white/5 rounded-full flex items-center justify-center mx-auto relative">
+                            <div class="absolute inset-0 bg-blue-500/20 blur-2xl rounded-full animate-pulse"></div>
+                            <span class="text-6xl relative z-10">📁</span>
+                        </div>
+                    </div>
+                    <h2 class="text-3xl font-bold mb-3">Initialize Portal</h2>
+                    <p class="text-white/40 mb-10 text-lg">Drop any PDF, Word, or Image file here (Max 50MB)</p>
+                    <button onclick="document.getElementById('file-input').click()" class="apple-btn">
+                        BROWSE SYSTEM FILES
+                    </button>
+                    <input type="file" id="file-input" class="hidden">
+                </div>
+            </div>
+
+            <div id="state-config" class="state-hidden fade-in px-10">
+                <div class="flex flex-col md:flex-row items-center gap-12 mb-12">
+                    <div class="w-48 h-48 bg-white/5 rounded-[32px] flex items-center justify-center text-7xl shadow-inner">
+                        <span id="file-icon-display">📄</span>
+                    </div>
+                    <div class="flex-grow text-left">
+                        <h3 id="file-name-display" class="text-4xl font-extrabold mb-2 truncate max-w-md">Document_Title.pdf</h3>
+                        <div class="flex gap-4">
+                            <span id="file-size-display" class="badge">12.4 MB</span>
+                            <span id="file-type-display" class="badge bg-blue-500/20 text-blue-300 border border-blue-500/30">PDF Document</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-8 mb-12">
+                    <div class="space-y-4">
+                        <label class="block text-xs font-black uppercase tracking-widest text-white/40 ml-4">Transformation Type</label>
+                        <select id="conversion-selector" class="w-full bg-white/5 border border-white/10 p-6 rounded-3xl text-xl font-bold outline-none hover:bg-white/10 transition">
+                            </select>
+                    </div>
+                    <div class="space-y-4">
+                        <label class="block text-xs font-black uppercase tracking-widest text-white/40 ml-4">Quality Tier</label>
+                        <div class="flex gap-2 bg-white/5 p-2 rounded-3xl border border-white/10">
+                            <button class="flex-1 py-4 rounded-2xl bg-white text-black font-bold text-sm">Standard</button>
+                            <button class="flex-1 py-4 rounded-2xl hover:bg-white/5 font-bold text-sm text-white/40">High (DPI+)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-4">
+                    <button id="btn-back" class="flex-1 py-6 rounded-3xl bg-white/5 border border-white/10 font-bold hover:bg-white/10 transition">
+                        ← CANCEL & RETURN
+                    </button>
+                    <button id="btn-execute" class="flex-[2] apple-btn text-xl">
+                        START TRANSFORMATION ⚡
+                    </button>
+                </div>
+            </div>
+
+            <div id="state-processing" class="state-hidden text-center fade-in">
+                <div class="mb-12">
+                    <div class="relative w-48 h-48 mx-auto mb-8">
+                        <svg class="w-full h-full transform -rotate-90">
+                            <circle cx="96" cy="96" r="80" stroke="currentColor" stroke-width="8" fill="transparent" class="text-white/5"/>
+                            <circle id="progress-circle" cx="96" cy="96" r="80" stroke="currentColor" stroke-width="8" fill="transparent" stroke-dasharray="502.6" stroke-dashoffset="502.6" class="text-blue-500 transition-all duration-300"/>
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span id="progress-text" class="text-4xl font-black">0%</span>
+                        </div>
+                    </div>
+                    <h2 id="processing-status" class="text-3xl font-bold mb-4 animate-pulse">RECONSTRUCTING XML...</h2>
+                    <p class="text-white/30 text-lg">Do not close the portal. All data is processed locally.</p>
+                </div>
+            </div>
+
+            <div id="state-success" class="state-hidden text-center fade-in">
+                <div class="w-32 h-32 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center mx-auto mb-8 text-6xl">
+                    ✓
+                </div>
+                <h2 class="text-5xl font-black mb-4 tracking-tight">Transformation Complete</h2>
+                <p class="text-white/40 text-xl mb-12">Your file has been meticulously reconstructed and downloaded.</p>
+                <div class="flex justify-center gap-4">
+                    <button onclick="location.reload()" class="apple-btn px-16">
+                        NEW TRANSFORMATION
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <footer class="mt-12 flex flex-col md:flex-row justify-between items-center opacity-40 text-[10px] font-black uppercase tracking-[0.3em]">
+            <div class="mb-4 md:mb-0">© 2026 CONVERTER PRO | KHALID SYSTEMS ARCHITECTURE</div>
+            <div class="flex gap-8">
+                <span>Memory: <span id="sys-mem">Allocated</span></span>
+                <span>Security: High-Grade</span>
+                <span>Environment: Browser-Sovereign</span>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        /**
+         * CONVERTER PRO: MASTER ENGINE
+         * ARCHITECTURE: Modular Class-Based System
+         * RECENT PRIORITIES 2026: WASM Optimization, Local File Access
+         */
+
+        class ConverterEngine {
+            constructor() {
+                this.file = null;
+                this.fileData = null;
+                this.extension = '';
+                this.state = 'DROP'; // DROP, CONFIG, PROCESSING, SUCCESS
+                this.setupEventListeners();
+                this.initBackground();
+                this.checkSystemHealth();
+            }
+
+            // 1. FORENSIC INITIALIZATION
+            initBackground() {
+                const canvas = document.getElementById('bg-canvas');
+                const ctx = canvas.getContext('2d');
+                let w, h;
+
+                const resize = () => {
+                    w = canvas.width = window.innerWidth;
+                    h = canvas.height = window.innerHeight;
+                };
+
+                window.addEventListener('resize', resize);
+                resize();
+
+                const particles = [];
+                for(let i = 0; i < 15; i++) {
+                    particles.push({
+                        x: Math.random() * w,
+                        y: Math.random() * h,
+                        r: Math.random() * 200 + 100,
+                        vx: Math.random() * 2 - 1,
+                        vy: Math.random() * 2 - 1,
+                        color: `hsla(${Math.random() * 360}, 70%, 50%, 0.3)`
+                    });
+                }
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, w, h);
+                    particles.forEach(p => {
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        if(p.x < -p.r) p.x = w + p.r;
+                        if(p.x > w + p.r) p.x = -p.r;
+                        if(p.y < -p.r) p.y = h + p.r;
+                        if(p.y > h + p.r) p.y = -p.r;
+
+                        ctx.beginPath();
+                        ctx.fillStyle = p.color;
+                        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                    requestAnimationFrame(animate);
+                };
+                animate();
+            }
+
+            checkSystemHealth() {
+                console.log("%c CONVERTER PRO | SYSTEM ONLINE ", "background: #0071e3; color: #fff; font-weight: bold; padding: 10px;");
+                const mem = navigator.deviceMemory || "Stable";
+                document.getElementById('sys-mem').innerText = `${mem}GB Environment`;
+            }
+
+            // 2. INTERFACE CONTROLLERS
+            switchState(newState) {
+                const states = ['drop', 'config', 'processing', 'success'];
+                states.forEach(s => document.getElementById(`state-${s}`).classList.add('state-hidden'));
+                document.getElementById(`state-${newState.toLowerCase()}`).classList.remove('state-hidden');
+                this.state = newState;
+            }
+
+            setupEventListeners() {
+                const dropArea = document.getElementById('drop-area');
+                const fileInput = document.getElementById('file-input');
+
+                // Drag and Drop Hijacking
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => {
+                    dropArea.addEventListener(e, (evt) => evt.preventDefault());
+                });
+
+                dropArea.addEventListener('drop', (e) => this.handleFileSelection(e.dataTransfer.files[0]));
+                fileInput.addEventListener('change', (e) => this.handleFileSelection(e.target.files[0]));
+                
+                document.getElementById('btn-execute').onclick = () => this.executeConversion();
+                document.getElementById('btn-back').onclick = () => location.reload();
+            }
+
+            // 3. CORE FILE PROCESSING
+            async handleFileSelection(file) {
+                if (!file) return;
+
+                // GAP ARMOR: 50MB Shield
+                if (file.size > 50 * 1024 * 1024) {
+                    this.notifyUser("CRITICAL ERROR: File capacity exceeds the 50MB Architectural Limit.");
+                    return;
+                }
+
+                this.file = file;
+                this.extension = file.name.split('.').pop().toLowerCase();
+                
+                // Visual Updates
+                document.getElementById('file-name-display').innerText = file.name;
+                document.getElementById('file-size-display').innerText = (file.size / (1024 * 1024)).toFixed(2) + " MB";
+                document.getElementById('file-icon-display').innerText = this.getIcon(this.extension);
+                
+                this.populateOptions(this.extension);
+                this.switchState('CONFIG');
+            }
+
+            getIcon(ext) {
+                const icons = { pdf: '📄', docx: '📝', png: '🖼️', jpg: '📸', jpeg: '📸' };
+                return icons[ext] || '📁';
+            }
+
+            populateOptions(ext) {
+                const selector = document.getElementById('conversion-selector');
+                selector.innerHTML = '';
+                
+                const matrix = {
+                    'pdf': ['Images (Every Page as ZIP)', 'Microsoft Word (.doc)', 'Plain Text (.txt)'],
+                    'docx': ['PDF (High Fidelity)', 'Images (Page Snapshot ZIP)'],
+                    'png': ['JPEG (.jpg)', 'PDF (Container)', 'Word (Wrapped)'],
+                    'jpg': ['PNG (.png)', 'PDF (Container)', 'Word (Wrapped)'],
+                    'jpeg': ['PNG (.png)', 'PDF (Container)', 'Word (Wrapped)']
+                };
+
+                const options = matrix[ext] || ['PDF (.pdf)'];
+                options.forEach(opt => {
+                    const el = document.createElement('option');
+                    el.value = opt;
+                    el.innerText = opt;
+                    selector.appendChild(el);
+                });
+            }
+
+            // 4. THE EXECUTION HUB (Where the magic happens)
+            async executeConversion() {
+                const target = document.getElementById('conversion-selector').value;
+                this.switchState('PROCESSING');
+                
+                this.updateProgress(10, "ANALYZING HEADERS...");
+
+                try {
+                    if (this.extension === 'pdf') {
+                        if (target.includes('Images')) await this.pdfToImages();
+                        else if (target.includes('Word')) await this.pdfToWord();
+                        else await this.pdfToText();
+                    } 
+                    else if (['png', 'jpg', 'jpeg'].includes(this.extension)) {
+                        if (target.includes('PDF')) await this.imageToPdf();
+                        else if (target.includes('Word')) await this.imageToWord();
+                        else await this.imageFormatSwap(target);
+                    }
+                    else if (this.extension === 'docx') {
+                        await this.wordToPdf();
+                    }
+
+                    this.finalizeSuccess();
+                } catch (err) {
+                    console.error(err);
+                    this.notifyUser("Transformation Failure: " + err.message);
+                    this.switchState('CONFIG');
+                }
+            }
+
+            // 5. ATOMIC TRANSFORMATION MODULES
+            
+            // PDF -> IMAGES (Sequential Queue Logic)
+            async pdfToImages() {
+                const arrayBuffer = await this.file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+                const zip = new JSZip();
+                const totalPages = pdf.numPages;
+
+                for (let i = 1; i <= totalPages; i++) {
+                    const percent = 10 + Math.floor((i / totalPages) * 80);
+                    this.updateProgress(percent, `RENDERING PAGE ${i} OF ${totalPages}...`);
+
+                    const page = await pdf.getPage(i);
+                    const viewport = page.getViewport({scale: 3.0}); // High DPI
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    await page.render({canvasContext: ctx, viewport: viewport}).promise;
+                    const imgData = canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
+                    zip.file(`Page_${i}_ConverterPro.jpg`, imgData, {base64: true});
+                    
+                    // GAP ARMOR: Memory Purge
+                    canvas.width = 0; canvas.height = 0;
+                }
+
+                const zipBlob = await zip.generateAsync({type: "blob"});
+                this.triggerDownload(zipBlob, `${this.file.name.split('.')[0]}_Package.zip`);
+            }
+
+            // IMAGE -> PDF (A4 Formatting Logic)
+            async imageToPdf() {
+                this.updateProgress(50, "BUILDING PDF CONTAINER...");
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = () => {
+                        const width = doc.internal.pageSize.getWidth();
+                        const height = (img.height * width) / img.width;
+                        doc.addImage(e.target.result, 'JPEG', 0, 0, width, height);
+                        doc.save(`${this.file.name.split('.')[0]}_Pro.pdf`);
+                    };
+                };
+                reader.readAsDataURL(this.file);
+            }
+
+            // IMAGE -> WORD (Structural XML Logic)
+            async imageToWord() {
+                this.updateProgress(60, "GENERATING DOCX BLOCKS...");
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    const doc = new docx.Document({
+                        sections: [{
+                            children: [
+                                new docx.Paragraph({
+                                    children: [
+                                        new docx.TextRun("Reconstructed Image via ConverterPro"),
+                                        new docx.ImageRun({
+                                            data: e.target.result,
+                                            transformation: { width: 600, height: 400 }
+                                        })
+                                    ]
+                                })
+                            ]
+                        }]
+                    });
+
+                    const blob = await docx.Packer.toBlob(doc);
+                    this.triggerDownload(blob, `${this.file.name.split('.')[0]}_Editor.docx`);
+                };
+                reader.readAsDataURL(this.file);
+            }
+
+            // IMAGE FORMAT SWAP
+            async imageFormatSwap(target) {
+                const type = target.includes('PNG') ? 'image/png' : 'image/jpeg';
+                const ext = target.includes('PNG') ? 'png' : 'jpg';
+                
+                this.updateProgress(70, `RECODING TO ${ext.toUpperCase()}...`);
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                img.src = URL.createObjectURL(this.file);
+                
+                img.onload = () => {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    canvas.toBlob((blob) => {
+                        this.triggerDownload(blob, `${this.file.name.split('.')[0]}_transformed.${ext}`);
+                    }, type);
+                };
+            }
+
+            // 6. UTILITY FUNCTIONS
+            updateProgress(value, status) {
+                const circle = document.getElementById('progress-circle');
+                const text = document.getElementById('progress-text');
+                const statusEl = document.getElementById('processing-status');
+                
+                const offset = 502.6 - (value / 100) * 502.6;
+                circle.style.strokeDashoffset = offset;
+                text.innerText = `${value}%`;
+                statusEl.innerText = status;
+            }
+
+            finalizeSuccess() {
+                this.updateProgress(100, "COMPLETE");
+                setTimeout(() => {
+                    this.switchState('SUCCESS');
+                    confetti({
+                        particleCount: 150,
+                        spread: 100,
+                        origin: { y: 0.6 },
+                        colors: ['#0071e3', '#ffffff', '#8b5cf6']
+                    });
+                }, 800);
+            }
+
+            triggerDownload(blob, name) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = name;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+
+            notifyUser(msg) {
+                alert(msg);
+            }
+        }
+
+        // Initialize Engine
+        const App = new ConverterEngine();
+    </script>
+</body>
+</html>
